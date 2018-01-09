@@ -2,8 +2,10 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
+/src/.vs
 /src/packages
 /src/Toolroom.ApiHelper/bin
 /src/Toolroom.ApiHelper/obj
 /src/Toolroom.ApiHelper/Toolroom.ApiHelper.csproj.DotSettings
 *.suo
+*.user
