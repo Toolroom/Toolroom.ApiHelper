@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Toolroom.ApiHelper
@@ -17,5 +19,19 @@ namespace Toolroom.ApiHelper
             return r.IsMatch(email);
         }
         #endregion
+
+        public static string ToRelationshipName(this string propertyName)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (propertyName.EndsWith("Id", false, CultureInfo.InvariantCulture))
+                propertyName = propertyName.Substring(0, propertyName.Length - 2);
+            foreach (var character in propertyName)
+            {
+                if (sb.Length > 0 && char.IsUpper(character))
+                    sb.Append("-");
+                sb.Append(char.ToLower(character));
+            }
+            return sb.ToString();
+        }
     }
 }

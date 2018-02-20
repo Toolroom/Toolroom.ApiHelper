@@ -144,10 +144,10 @@ namespace Toolroom.ApiHelper
 
         public void AddOneToOneRelationOnly<TRelatedObject>(
             JsonApiDocument document,
-            string relatedObjectKey, string relatedObjectId)
+            string relatedObjectKey, string relatedObjectId, Uri selfUri = null, Uri relatedUri = null)
             where TRelatedObject : JsonApiResourceObject
         {
-            if(relatedObjectId == null)
+            if (relatedObjectId == null && relatedUri == null)
             {
                 return;
             }
@@ -162,18 +162,19 @@ namespace Toolroom.ApiHelper
 
             Relationships.Add(relatedObjectKey, new JsonApiToOneRelationship
             {
-                Data = new JsonApiResourceIdentiferObject(relatedObjectId, relatedTypeName)
+                Data = string.IsNullOrWhiteSpace(relatedObjectId) ? null : new JsonApiResourceIdentiferObject(relatedObjectId, relatedTypeName),
+                Links = selfUri == null && relatedUri == null ? null : new JsonApiLinksObject(selfUri == null ? null : new JsonApiLink(selfUri.AbsoluteUri), new JsonApiLink(relatedUri == null ? null : relatedUri.AbsoluteUri))
             });
         }
 
         public void AddOneToOneRelationOnly<TBaseObject, TRelatedObject>(
             JsonApiDocument document,
             TBaseObject baseObject,
-            string relatedObjectKey, string relatedObjectId)
+            string relatedObjectKey, string relatedObjectId, Uri selfUri = null, Uri relatedUri = null)
             where TBaseObject : JsonApiResourceObject
             where TRelatedObject : JsonApiResourceObject
         {
-            if (relatedObjectId == null)
+            if (relatedObjectId == null && relatedUri == null)
             {
                 return;
             }
@@ -188,8 +189,10 @@ namespace Toolroom.ApiHelper
 
             baseObject.Relationships.Add(relatedObjectKey, new JsonApiToOneRelationship
             {
-                Data = new JsonApiResourceIdentiferObject(relatedObjectId, relatedTypeName)
+                Data = string.IsNullOrWhiteSpace(relatedObjectId) ? null : new JsonApiResourceIdentiferObject(relatedObjectId, relatedTypeName),
+                Links = selfUri == null && relatedUri == null ? null : new JsonApiLinksObject(selfUri == null ? null : new JsonApiLink(selfUri.AbsoluteUri), new JsonApiLink(relatedUri == null ? null : relatedUri.AbsoluteUri))
             });
+
         }
 
         #endregion
@@ -262,7 +265,7 @@ namespace Toolroom.ApiHelper
 
         public void AddOneToManyRelationOnly<TRelatedObject>(
             JsonApiDocument document,
-            string relatedObjectsKey, IEnumerable<string> relatedObjectIds, 
+            string relatedObjectsKey, IEnumerable<string> relatedObjectIds,
             Uri selfUri = null, Uri relatedUri = null) where TRelatedObject : JsonApiResourceObject
         {
             var relatedJsonClassAttribute = typeof(TRelatedObject).GetGenericArguments().FirstOrDefault()?.GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;

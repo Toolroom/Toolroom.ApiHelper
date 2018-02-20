@@ -19,8 +19,17 @@ namespace Toolroom.ApiHelper
 
         public JsonApiCollectionDocument(IEnumerable<T> data, JsonApiErrors errors, object metadata = null, bool hasLinks = false, bool hasRelationships = false, bool hasIncludedData = false, Func<T, string> customIdResolver = null)
         {
-            customIdResolver = customIdResolver ?? ((d) => d.Id.ToString());
-
+            if (customIdResolver == null)
+            {
+                if (typeof(ICustomJsonModelId).IsAssignableFrom(typeof(T)))
+                {
+                    customIdResolver = d => (d as ICustomJsonModelId)?.CustomJsonModelId;
+                }
+                else
+                {
+                    customIdResolver = d => d.Id.ToString();
+                }
+            }
             Meta = metadata;
             Errors = errors;
             if (data == null)
@@ -35,7 +44,7 @@ namespace Toolroom.ApiHelper
                 foreach (var item in data)
                 {
                     //var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), CultureInfo.CurrentCulture.TextInfo.ToTitleCase(typeof(T).Name.Replace("Model", "")), item);
-                    var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), typeof(T).Name.Replace("Model", ""), item);
+                    var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), typeof(T).Name.Replace("Model", "").ToRelationshipName(), item);
                     if (hasRelationships)
                     {
                         newDataItem.Relationships = new JsonApiRelationshipsObject();
