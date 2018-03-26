@@ -55,7 +55,7 @@ namespace Toolroom.ApiHelper
             }
             else
             {
-                Data = new JsonApiResourceObject<T>(idResolver(data), typeof(T).Name.Replace("Model", ""), data)
+                Data = new JsonApiResourceObject<T>(idResolver(data), data.GetType().Name.Replace("Model", ""), data)
                 {
                     Relationships = relationships
                 };
