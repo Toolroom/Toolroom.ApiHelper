@@ -26,8 +26,13 @@ namespace Toolroom.ApiHelper
         public static DateTime FromLocalToUtcDateTime(this DateTime localDateTime,
             string timeZoneId = DefaultTimeZoneId)
         {
+            if (localDateTime.Kind == DateTimeKind.Utc)
+            {
+                return localDateTime;
+            }
+
             TimeZoneInfo tz;
-            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);          
             return TimeZoneInfo.ConvertTime(localDateTime, tz, TimeZoneInfo.Utc);
         }
 
