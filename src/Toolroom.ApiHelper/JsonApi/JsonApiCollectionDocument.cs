@@ -44,7 +44,7 @@ namespace Toolroom.ApiHelper
                 foreach (var item in data)
                 {
                     //var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), CultureInfo.CurrentCulture.TextInfo.ToTitleCase(typeof(T).Name.Replace("Model", "")), item);
-                    var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), typeof(T).Name.Replace("Model", "").ToRelationshipName(), item);
+                    var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), item.GetType().Name.Replace("Model", "").ToRelationshipName(), item);
                     if (hasRelationships)
                     {
                         newDataItem.Relationships = new JsonApiRelationshipsObject();
