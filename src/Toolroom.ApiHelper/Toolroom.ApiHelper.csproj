@@ -57,6 +57,7 @@
     <Compile Include="Calls\IPermissionValidation.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Extensions\TimeSpanExtensions.cs" />
     <Compile Include="JsonApi\ICustomJsonModelId.cs" />
     <Compile Include="JsonApi\JsonApiCollectionDocument.cs" />
     <Compile Include="JsonApi\JsonApiDocument.cs" />
