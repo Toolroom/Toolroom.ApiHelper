@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Toolroom.ApiHelper
 {
@@ -43,8 +44,9 @@ namespace Toolroom.ApiHelper
 
                 foreach (var item in data)
                 {
-                    //var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), CultureInfo.CurrentCulture.TextInfo.ToTitleCase(typeof(T).Name.Replace("Model", "")), item);
-                    var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), item.GetType().Name.Replace("Model", "").ToRelationshipName(), item);
+                    JsonClassAttribute classAttrib = item.GetType().GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
+                    if(classAttrib == null) { throw new Exception("No class attribute specified for " + item.GetType().Name + "."); }
+                    var newDataItem = new JsonApiResourceObject<T>(customIdResolver(item), classAttrib.Name, item);
                     if (hasRelationships)
                     {
                         newDataItem.Relationships = new JsonApiRelationshipsObject();
