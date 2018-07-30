@@ -55,7 +55,9 @@ namespace Toolroom.ApiHelper
             }
             else
             {
-                Data = new JsonApiResourceObject<T>(idResolver(data), data.GetType().Name.Replace("Model", ""), data)
+                JsonClassAttribute classAttrib = data.GetType().GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
+                if (classAttrib == null) { throw new Exception("No class attribute specified for " + data.GetType().Name + "."); }
+                Data = new JsonApiResourceObject<T>(idResolver(data), classAttrib.Name, data)
                 {
                     Relationships = relationships
                 };
