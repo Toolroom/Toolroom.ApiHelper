@@ -55,7 +55,7 @@ namespace Toolroom.ApiHelper
                 }
 
                 //TODO :replace is a hack to remove the "Model"-Part from the name, solve this as parameter in the future 
-                Included = !hasIncludedData ? null : new List<JsonApiResourceObject>();
+                Included = !hasIncludedData ? null : new JsonApiInclusionCollection();//new List<JsonApiResourceObject>();
             }
 
             Links = hasLinks ? new JsonApiLinksObject() : null;

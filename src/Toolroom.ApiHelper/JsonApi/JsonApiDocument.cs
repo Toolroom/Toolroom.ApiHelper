@@ -20,7 +20,7 @@ namespace Toolroom.ApiHelper
         public JsonApiLinksObject Links { get; protected set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public List<JsonApiResourceObject> Included { get; protected set; }
+        public JsonApiInclusionCollection Included { get; protected set; }
 
         public void AddError(string uid, JsonApiLink aboutLink, int httpStatusCode, string appErrorCode, string title, string detail, object source, object meta)
         {
