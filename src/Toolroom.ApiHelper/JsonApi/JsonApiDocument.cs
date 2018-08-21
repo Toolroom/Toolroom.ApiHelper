@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 
 namespace Toolroom.ApiHelper
 {
+
     public class JsonApiDocument
     {
         [JsonIgnore]
@@ -30,6 +31,24 @@ namespace Toolroom.ApiHelper
             }
 
             Errors.Add(uid, aboutLink, httpStatusCode, appErrorCode, title, detail, source, meta);
+        }
+
+        protected static Dictionary<string, Type> KNOWNMODELTYPES;
+
+        public static bool RegisterModel(Type modelType)
+        {
+            if (KNOWNMODELTYPES == null) KNOWNMODELTYPES = new Dictionary<string, Type>();
+            if (!modelType.IsSubclassOf(typeof(JsonBaseModel))) return false;
+            var classAttrib = modelType.GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
+            if (classAttrib == null) return false;
+            if (string.IsNullOrEmpty(classAttrib.Name)) return false;
+            KNOWNMODELTYPES.Add(classAttrib.Name, modelType);
+            return true;
+        }
+
+        public static Type QueryType(string jsonTypeName)
+        {
+            return KNOWNMODELTYPES[jsonTypeName];
         }
     }
 
