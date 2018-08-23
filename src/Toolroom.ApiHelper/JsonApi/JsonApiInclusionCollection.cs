@@ -28,31 +28,15 @@ namespace Toolroom.ApiHelper
             JsonSerializer serializer)
         {
             JArray jArray = JArray.Load(reader);
-
             JsonApiInclusionCollection target = Create(null,null);
-
-            foreach (var jToken in jArray)
+            foreach (JObject jObject in jArray.Children<JObject>())
             {
-                //get class type name
-                string classname = jToken.Value<string>("type");
-                string id = jToken.Value<string>("id");
-                if (string.IsNullOrEmpty(classname) || string.IsNullOrEmpty("id")) continue;
-                
-                var attr = jToken["attributes"];
-                
-                //infer type
-                Type targetType = JsonApiDocument.QueryType(classname);
-
-                if(targetType != null)
-                {
-                    var instance = attr.ToObject(targetType, serializer);
-                    if (instance == null) continue;
-                    target.Add(new JsonApiResourceObject<JsonBaseModel>(id, classname, instance as JsonBaseModel));
-                }
-                else
-                {
-                    target.Add(new JsonApiResourceObject<object>(id, classname, attr.ToObject(typeof( object ))));
-                }
+                string type = jObject.Value<string>("type");
+                string id = jObject.Value<string>("id");
+                JObject attr = jObject.Value<JObject>("attributes");
+                string json = attr.ToString(Formatting.None);
+                System.Diagnostics.Debug.WriteLine(json);
+                target.Add(new JsonApiResourceObject<string>(id, type, json));
             }
 
             return target;

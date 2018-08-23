@@ -28,6 +28,19 @@ namespace Toolroom.ApiHelper
         public JsonApiLinksObject Links { get; set; }
 
         public object Attributes { get; set; }
+
+        public T ToModel<T>() where T : JsonBaseModel
+        {
+            string jsonString = Attributes as string;
+            T result = null;
+            try {
+                result = Newtonsoft.Json.Linq.JObject.Parse(jsonString)?.ToObject<T>();
+            }
+            catch (Exception e)
+            {
+            }
+            return result;
+        }
     }
 
     public class JsonApiResourceObject<TMain> : JsonApiResourceObject

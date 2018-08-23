@@ -33,24 +33,12 @@ namespace Toolroom.ApiHelper
             Errors.Add(uid, aboutLink, httpStatusCode, appErrorCode, title, detail, source, meta);
         }
 
-        protected static Dictionary<string, Type> KNOWNMODELTYPES;
-
-        public static bool RegisterModel(Type modelType)
+        public IEnumerable<T> ExtractFromIncludes<T>() where T : JsonBaseModel
         {
-            if (KNOWNMODELTYPES == null) KNOWNMODELTYPES = new Dictionary<string, Type>();
-            if (!modelType.IsSubclassOf(typeof(JsonBaseModel))) return false;
-
-            var classAttrib = modelType.GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
-            if (classAttrib == null) return false;
-            if (string.IsNullOrEmpty(classAttrib.Name)) return false;
-            KNOWNMODELTYPES.Add(classAttrib.Name, modelType);
-            return true;
-        }
-
-        public static Type QueryType(string jsonTypeName)
-        {
-            if (!(KNOWNMODELTYPES?.ContainsKey(jsonTypeName)??false)) { return null; }
-            return KNOWNMODELTYPES[jsonTypeName];
+            Type modeltype = typeof(T);
+            var classattribs = modeltype.GetCustomAttributes(typeof(JsonClassAttribute), false);
+            string modelName = (classattribs?.FirstOrDefault() as JsonClassAttribute)?.Name;
+            return Included.Where(x => x.Type.Equals(modelName)).Select(r => r.ToModel<T>());
         }
     }
 
