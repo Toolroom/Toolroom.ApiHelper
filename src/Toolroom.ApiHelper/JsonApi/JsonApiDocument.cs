@@ -39,6 +39,7 @@ namespace Toolroom.ApiHelper
         {
             if (KNOWNMODELTYPES == null) KNOWNMODELTYPES = new Dictionary<string, Type>();
             if (!modelType.IsSubclassOf(typeof(JsonBaseModel))) return false;
+
             var classAttrib = modelType.GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
             if (classAttrib == null) return false;
             if (string.IsNullOrEmpty(classAttrib.Name)) return false;
@@ -48,6 +49,7 @@ namespace Toolroom.ApiHelper
 
         public static Type QueryType(string jsonTypeName)
         {
+            if (!(KNOWNMODELTYPES?.ContainsKey(jsonTypeName)??false)) { return null; }
             return KNOWNMODELTYPES[jsonTypeName];
         }
     }

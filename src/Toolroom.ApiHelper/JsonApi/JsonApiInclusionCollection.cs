@@ -27,7 +27,6 @@ namespace Toolroom.ApiHelper
             object existingValue,
             JsonSerializer serializer)
         {
-            System.Diagnostics.Debug.WriteLine("'''''''########################''''''''''''''''");
             JArray jArray = JArray.Load(reader);
 
             JsonApiInclusionCollection target = Create(null,null);
@@ -38,11 +37,12 @@ namespace Toolroom.ApiHelper
                 string classname = jToken.Value<string>("type");
                 string id = jToken.Value<string>("id");
                 if (string.IsNullOrEmpty(classname) || string.IsNullOrEmpty("id")) continue;
-
+                
                 var attr = jToken["attributes"];
                 
                 //infer type
                 Type targetType = JsonApiDocument.QueryType(classname);
+
                 if(targetType != null)
                 {
                     var instance = attr.ToObject(targetType, serializer);
