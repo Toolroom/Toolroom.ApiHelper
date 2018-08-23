@@ -18,7 +18,7 @@ namespace Toolroom.ApiHelper
     {
         protected override JsonApiInclusionCollection Create(Type objectType, JObject jObject)
         {
-            throw new NotImplementedException();
+            return new JsonApiInclusionCollection();
         }
 
         public override object ReadJson(
@@ -27,20 +27,32 @@ namespace Toolroom.ApiHelper
             object existingValue,
             JsonSerializer serializer)
         {
+            System.Diagnostics.Debug.WriteLine("'''''''########################''''''''''''''''");
             JArray jArray = JArray.Load(reader);
 
-            JsonApiInclusionCollection target = new JsonApiInclusionCollection();
+            JsonApiInclusionCollection target = Create(null,null);
 
             foreach (var jToken in jArray)
             {
                 //get class type name
                 string classname = jToken.Value<string>("type");
                 string id = jToken.Value<string>("id");
+                if (string.IsNullOrEmpty(classname) || string.IsNullOrEmpty("id")) continue;
+
+                var attr = jToken["attributes"];
+                
                 //infer type
                 Type targetType = JsonApiDocument.QueryType(classname);
-                var instance = jToken.ToObject(targetType, serializer) as JsonBaseModel;
-                if (instance == null) continue;
-                target.Add(new JsonApiResourceObject<JsonBaseModel>(id, classname, instance));
+                if(targetType != null)
+                {
+                    var instance = attr.ToObject(targetType, serializer);
+                    if (instance == null) continue;
+                    target.Add(new JsonApiResourceObject<JsonBaseModel>(id, classname, instance as JsonBaseModel));
+                }
+                else
+                {
+                    target.Add(new JsonApiResourceObject<object>(id, classname, attr.ToObject(typeof( object ))));
+                }
             }
 
             return target;
