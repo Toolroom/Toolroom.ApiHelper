@@ -39,6 +39,9 @@ namespace Toolroom.ApiHelper
             catch (Exception e)
             {
             }
+            int id = -1;
+            int.TryParse(Id, out id);
+            result.Id = id;
             return result;
         }
     }
