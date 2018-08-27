@@ -64,8 +64,8 @@ namespace Toolroom.ApiHelper
             if (FieldExists(jObject, "data", JTokenType.Array))
                 return new JsonApiToManyRelationship();
 
-            //if (FieldExists(jObject, "data", JTokenType.Null))
-            //    return null;
+            if (FieldExists(jObject, "links", JTokenType.Object))
+                return new JsonApiToOneRelationship();
 
             throw new InvalidOperationException();
         }
