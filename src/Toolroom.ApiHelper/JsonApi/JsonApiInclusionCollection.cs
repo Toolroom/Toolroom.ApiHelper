@@ -33,9 +33,9 @@ namespace Toolroom.ApiHelper
             {
                 string type = jObject.Value<string>("type");
                 string id = jObject.Value<string>("id");
-                JObject attr = jObject.Value<JObject>("attributes");
-                string json = attr.ToString(Formatting.None);
-                System.Diagnostics.Debug.WriteLine(json);
+                //JObject attr = jObject.Value<JObject>("attributes");
+                //string json = attr.ToString(Formatting.None);
+                string json = jObject.ToString(Formatting.None);
                 target.Add(new JsonApiResourceObject<string>(id, type, json));
             }
 
