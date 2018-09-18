@@ -28,7 +28,7 @@ namespace Toolroom.ApiHelper
         public JsonApiLinksObject Links { get; set; }
 
         public object Attributes { get; set; }
-        
+
     }
 
     public class JsonApiResourceObject<TMain> : JsonApiResourceObject
@@ -213,7 +213,7 @@ namespace Toolroom.ApiHelper
 
             string relatedTypeName = "unknown";
 
-            var relatedGenericTypeArgument = relatedObjects.GetType().GetGenericArguments().FirstOrDefault();
+            var relatedGenericTypeArgument = typeof(TRelatedObject).GetGenericArguments().FirstOrDefault();
             if (relatedGenericTypeArgument != null)
             {
                 var relatedJsonClassAttribute = relatedGenericTypeArgument.GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
