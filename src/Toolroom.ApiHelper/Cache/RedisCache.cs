@@ -40,10 +40,10 @@ namespace Toolroom.ApiHelper
             return true;
         }
 
-        public bool Delete<TKey, T>(TKey id, T item)
+        public bool Delete<TKey>(TKey id, Type type)
         {
             if (!IsConnected) return false;
-            var key = GetKey(typeof(T), id);
+            var key = GetKey(type, id);
             return !Db.KeyExists(key) || Db.KeyDelete(key);
         }
 
