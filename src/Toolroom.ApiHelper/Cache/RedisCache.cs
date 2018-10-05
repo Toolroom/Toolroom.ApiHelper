@@ -34,7 +34,7 @@ namespace Toolroom.ApiHelper
             var server = Connection.GetServer(_connectionString.Split(',')[0]);
             if (!server.IsConnected) return false;
 
-            var keys = server.Keys(Db.Database, pattern: GetKey(typeof(T).FullName, "*")).ToArray();
+            var keys = server.Keys(Db.Database, pattern: GetKey(typeof(T), "*")).ToArray();
             if (!IsConnected) return false;
             var deletedItems = Db.KeyDelete(keys);
             return true;
@@ -43,13 +43,44 @@ namespace Toolroom.ApiHelper
         public bool Delete<TKey, T>(TKey id, T item)
         {
             if (!IsConnected) return false;
-            var key = GetKey(typeof(T).FullName, id);
+            var key = GetKey(typeof(T), id);
             return !Db.KeyExists(key) || Db.KeyDelete(key);
         }
 
+        private string GetKey<TKey>(Type type, TKey id)
+        {
+            return GetKey(type.FullName, id);
+        }
         private string GetKey<TKey>(string typeName, TKey id)
         {
             return $"{typeName}:{id}";
+        }
+
+        public bool Set<TKey, T>(TKey id, T item)
+        {
+            var key = GetKey(typeof(T), item);
+            return Set(key, item);
+        }
+
+        private bool Set<T>(string key, T item)
+        {
+            if (!IsConnected) return false;
+            var serializedItem = SerializeObject(item);
+            return Db.StringSet(key, serializedItem);
+        }
+
+        public void AddOrUpdate<TKey, T>(TKey id, T item)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            if (!IsConnected) return;
+
+            var key = GetKey(typeof(T).FullName, id);
+            var storedVal = SerializeObject(item);
+            Db.StringSet(key, storedVal);
         }
 
         public T GetOrAdd<TKey, T>(TKey id, Func<TKey, T> valueFactory)
@@ -61,7 +92,7 @@ namespace Toolroom.ApiHelper
 
             if (!IsConnected) return valueFactory(id);
 
-            var key = GetKey(typeof(T).FullName, id);
+            var key = GetKey(typeof(T), id);
 
             var storedVal = Db.StringGet(key);
             if (storedVal.HasValue)
@@ -77,8 +108,7 @@ namespace Toolroom.ApiHelper
             }
 
             var newVal = valueFactory(id);
-            storedVal = SerializeObject(newVal);
-            Db.StringSet(key, storedVal);
+            Set(id, newVal);
             return newVal;
         }
 
