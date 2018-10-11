@@ -77,6 +77,7 @@ namespace Toolroom.ApiHelper
 
         #endregion
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
         public JsonApiResourceObject<T> Data
         {
             get
