@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -78,6 +79,7 @@ namespace Toolroom.ApiHelper
 
         #endregion
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Include)]
         public List<JsonApiResourceObject<T>> Data
         {
             get
