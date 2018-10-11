@@ -24,6 +24,29 @@ namespace Toolroom.ApiHelper
             }
             return null;
         }
+
+        public static IEnumerable<int> GetRelationIds(this JsonApiRelationshipsObject relationships, string relationKey)
+        {
+            if (relationships == null)
+            {
+                yield break;
+            }
+            if (relationships.ContainsKey(relationKey))
+            {
+                var relations = relationships[relationKey] as JsonApiToManyRelationship;
+                if (relations?.Data != null)
+                {
+                    foreach (var relation in relations.Data)
+                    {
+                        int id;
+                        if (relation != null && int.TryParse(relation.Id, out id))
+                        {
+                            yield return id;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public class JsonApiRelationshipsObject : Dictionary<string, JsonApiRelationshipBase>
@@ -41,8 +64,8 @@ namespace Toolroom.ApiHelper
             if (FieldExists(jObject, "data", JTokenType.Array))
                 return new JsonApiToManyRelationship();
 
-            //if (FieldExists(jObject, "data", JTokenType.Null))
-            //    return null;
+            if (FieldExists(jObject, "links", JTokenType.Object))
+                return new JsonApiToOneRelationship();
 
             throw new InvalidOperationException();
         }

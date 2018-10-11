@@ -1,4 +1,6 @@
+using System;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -19,6 +21,23 @@ namespace Toolroom.ApiHelper
             return r.IsMatch(email);
         }
         #endregion
+
+        public static string GetJsonClassName(this JsonBaseModel model)
+        {
+            return GetJsonClassNameForType(model.GetType());
+        }
+
+        public static string GetJsonClassNameForType(Type modeltype)
+        {
+            var classattribs = modeltype.GetCustomAttributes(typeof(JsonClassAttribute), false);
+            string name = null;
+            name = (classattribs?.FirstOrDefault() as JsonClassAttribute)?.Name;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = modeltype.Name.ToLower();
+            }
+            return name;
+        }
 
         public static string ToRelationshipName(this string propertyName)
         {

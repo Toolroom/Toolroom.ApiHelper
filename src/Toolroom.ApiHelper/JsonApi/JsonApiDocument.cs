@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 
 namespace Toolroom.ApiHelper
 {
+
     public class JsonApiDocument
     {
         [JsonIgnore]
@@ -20,7 +21,7 @@ namespace Toolroom.ApiHelper
         public JsonApiLinksObject Links { get; protected set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public List<JsonApiResourceObject> Included { get; protected set; }
+        public JsonApiInclusionCollection Included { get; protected set; }
 
         public void AddError(string uid, JsonApiLink aboutLink, int httpStatusCode, string appErrorCode, string title, string detail, object source, object meta)
         {
@@ -30,6 +31,44 @@ namespace Toolroom.ApiHelper
             }
 
             Errors.Add(uid, aboutLink, httpStatusCode, appErrorCode, title, detail, source, meta);
+        }
+
+        public IEnumerable<JsonApiResourceObject<T>> ExtractFromIncludes<T>() where T : JsonBaseModel
+        {
+            // create container for storing the result set
+            List<JsonApiResourceObject<T>> results = new List<JsonApiResourceObject<T>>();
+
+            // gather meta info
+            Type modeltype = typeof(T);
+            var classattribs = modeltype.GetCustomAttributes(typeof(JsonClassAttribute), false);
+            string modelName = (classattribs?.FirstOrDefault() as JsonClassAttribute)?.Name;
+
+            //find relevant attributes in includes
+            var data = Included.Where(x => x.Type.Equals(modelName));
+
+            //try to convert the included attributes to datamodels
+            foreach(var resource in data)
+            {
+                string jsonString = resource.Attributes as string;
+                JsonApiResourceObject<T> model = null;
+                try
+                {
+                    model = Newtonsoft.Json.Linq.JObject.Parse(jsonString)?.ToObject<JsonApiResourceObject<T>>();
+                }
+                catch (Exception e)
+                {
+                }
+                if (model == null) continue;
+                //int id = -1;
+                //int.TryParse(resource.Id, out id);
+                //model.Id = id;
+                //var resourceT = new JsonApiResourceObject<T>(resource.Id, resource.Type, model);
+                //resourceT.Links = resource.Links;
+                //resourceT.Relationships = resource.Relationships;
+                results.Add(model);
+            }
+
+            return results;
         }
     }
 
@@ -55,7 +94,9 @@ namespace Toolroom.ApiHelper
             }
             else
             {
-                Data = new JsonApiResourceObject<T>(idResolver(data), typeof(T).Name.Replace("Model", ""), data)
+                JsonClassAttribute classAttrib = data.GetType().GetCustomAttributes(typeof(JsonClassAttribute), false).FirstOrDefault() as JsonClassAttribute;
+                if (classAttrib == null) { throw new Exception("No class attribute specified for " + data.GetType().Name + "."); }
+                Data = new JsonApiResourceObject<T>(idResolver(data), classAttrib.Name, data)
                 {
                     Relationships = relationships
                 };
