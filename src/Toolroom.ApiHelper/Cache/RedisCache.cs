@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using StackExchange.Redis;
 
 namespace Toolroom.ApiHelper
@@ -10,13 +12,49 @@ namespace Toolroom.ApiHelper
     public class RedisCache
     {
         private readonly string _connectionString;
+        private readonly IContractResolver _contractResolver;
         private readonly Lazy<ConnectionMultiplexer> _lazyConnection;
 
-        public RedisCache(string connectionString)
+        public RedisCache(string connectionString, IContractResolver contractResolver = null)
         {
             _connectionString = connectionString;
+            _contractResolver = contractResolver;
             _lazyConnection = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(_connectionString));
         }
+
+        public RedisCacheInfo GetInfo()
+        {
+            var ret = new RedisCacheInfo();
+            ret.IsConnected = IsConnected;
+            if (!ret.IsConnected)
+                return ret;
+
+            var result = Db.Execute("INFO", "memory");
+            if (!result.IsNull)
+            {
+                var str = result.ToString();
+                {
+                    Regex r = new Regex(@"used_memory_dataset:(\d*)?");
+                    var m = r.Match(str);
+                    if (m.Success)
+                    {
+                        if (m.Groups.Count > 1 && long.TryParse(m.Groups[1].Value, out var size))
+                            ret.UsedMemory = size;
+                    }
+                }
+                {
+                    Regex r = new Regex(@"maxmemory:(\d*)?");
+                    if (r.IsMatch(str))
+                    {
+                        var m = r.Match(str);
+                        if (m.Groups.Count > 1 && long.TryParse(m.Groups[1].Value, out var size))
+                            ret.MaximumMemory = size;
+                    }
+                }
+            }
+            return ret;
+        }
+
         private ConnectionMultiplexer Connection => _lazyConnection.Value;
 
         private IDatabase Db => Connection.GetDatabase();
@@ -31,15 +69,15 @@ namespace Toolroom.ApiHelper
 
         }
 
-        public bool DeleteAll<T>()
+        public long DeleteAll<T>()
         {
             var server = Connection.GetServer(_connectionString.Split(',')[0]);
-            if (!server.IsConnected) return false;
+            if (!server.IsConnected) return -1;
 
             var keys = server.Keys(Db.Database, pattern: GetKey(typeof(T), "*").ToString()).ToArray();
-            if (!IsConnected) return false;
+            if (!IsConnected) return -1;
             var deletedItems = Db.KeyDelete(keys);
-            return true;
+            return deletedItems;
         }
 
         public bool Delete<TKey>(TKey id, Type type)
@@ -125,7 +163,8 @@ namespace Toolroom.ApiHelper
             {
                 try
                 {
-                    return DeserializeObject<T>(storedVal);
+                    var ret = DeserializeObject<T>(storedVal);
+                    return ret;
                 }
                 catch
                 {
@@ -167,7 +206,7 @@ namespace Toolroom.ApiHelper
                 var storedVal = storedVals[i];
                 if (storedVal.HasValue)
                 {
-                    var element = default(T);
+                    T element;
                     try
                     {
                         element = DeserializeObject<T>(storedVal);
@@ -199,26 +238,26 @@ namespace Toolroom.ApiHelper
             return ret;
         }
 
+        private JsonSerializerSettings _serializerSettings;
+
+        private JsonSerializerSettings SerializerSettings =>
+            _serializerSettings ?? (_serializerSettings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                TypeNameHandling = TypeNameHandling.All,
+                ContractResolver = _contractResolver
+            });
         private string SerializeObject(object objectToCache)
         {
             return JsonConvert.SerializeObject(objectToCache
                 , Formatting.Indented
-                , new JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-                    PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-                    TypeNameHandling = TypeNameHandling.All
-                });
+                , SerializerSettings);
         }
         private T DeserializeObject<T>(string serializedObject)
         {
             return JsonConvert.DeserializeObject<T>(serializedObject
-                , new JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-                    PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-                    TypeNameHandling = TypeNameHandling.All
-                });
+                , SerializerSettings);
         }
     }
 }
