@@ -147,6 +147,20 @@ namespace Toolroom.ApiHelper
             Db.StringSet(key, storedVal);
         }
 
+        public async Task AddOrUpdate<TKey, T>(TKey id, Func<TKey, Task<T>> valueFactory)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+            if (valueFactory == null)
+                throw new ArgumentNullException(nameof(valueFactory));
+
+            if (!IsConnected) return;
+
+            var key = GetKey(typeof(T).FullName, id);
+            var storedVal = SerializeObject(await valueFactory(id));
+            Db.StringSet(key, storedVal);
+        }
+
         public T GetOrAdd<TKey, T>(TKey id, Func<TKey, T> valueFactory)
         {
             if (id == null)
@@ -173,6 +187,36 @@ namespace Toolroom.ApiHelper
             }
 
             var newVal = valueFactory(id);
+            Set(id, newVal);
+            return newVal;
+        }
+
+        public async Task<T> GetOrAdd<TKey, T>(TKey id, Func<TKey, Task<T>> valueFactory)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+            if (valueFactory == null)
+                throw new ArgumentNullException(nameof(valueFactory));
+
+            if (!IsConnected) return await valueFactory(id);
+
+            var key = GetKey(typeof(T), id);
+
+            var storedVal = Db.StringGet(key);
+            if (storedVal.HasValue)
+            {
+                try
+                {
+                    var ret = DeserializeObject<T>(storedVal);
+                    return ret;
+                }
+                catch
+                {
+                    // ignored - cannot deserialize - must be refreshed
+                }
+            }
+
+            var newVal = await valueFactory(id);
             Set(id, newVal);
             return newVal;
         }
