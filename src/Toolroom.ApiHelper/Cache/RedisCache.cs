@@ -87,6 +87,18 @@ namespace Toolroom.ApiHelper
             return !Db.KeyExists(key) || Db.KeyDelete(key);
         }
 
+        public long Delete<TKey>(IEnumerable<TKey> ids, Type type)
+        {
+            if (!IsConnected) return 0;
+            var keys = new List<RedisKey>();
+
+            foreach (var id in ids)
+            {
+                keys.Add(GetKey(type, id));
+            }
+            return Db.KeyDelete(keys.ToArray());
+        }
+
         private IEnumerable<KeyValuePair<TKey, RedisKey>> GetKeys<TKey>(Type type, IEnumerable<TKey> ids)
         {
             return GetKeys(type.FullName, ids);
