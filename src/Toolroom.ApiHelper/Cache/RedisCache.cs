@@ -69,60 +69,51 @@ namespace Toolroom.ApiHelper
 
         }
 
-        public long DeleteAll<T>()
+        public long DeleteAll(string prefix)
         {
             var server = Connection.GetServer(_connectionString.Split(',')[0]);
             if (!server.IsConnected) return -1;
 
-            var keys = server.Keys(Db.Database, pattern: GetKey(typeof(T), "*").ToString()).ToArray();
+            var keys = server.Keys(Db.Database, pattern: GetKey(prefix, "*").ToString()).ToArray();
             if (!IsConnected) return -1;
             var deletedItems = Db.KeyDelete(keys);
             return deletedItems;
         }
 
-        public bool Delete<TKey>(TKey id, Type type)
+        public bool Delete<TKey>(string prefix, TKey id)
         {
             if (!IsConnected) return false;
-            var key = GetKey(type, id);
+            var key = GetKey(prefix, id);
             return !Db.KeyExists(key) || Db.KeyDelete(key);
         }
 
-        public long Delete<TKey>(IEnumerable<TKey> ids, Type type)
+        public long Delete<TKey>(string prefix, IEnumerable<TKey> ids)
         {
             if (!IsConnected) return 0;
             var keys = new List<RedisKey>();
 
             foreach (var id in ids)
             {
-                keys.Add(GetKey(type, id));
+                keys.Add(GetKey(prefix, id));
             }
             return Db.KeyDelete(keys.ToArray());
         }
 
-        private IEnumerable<KeyValuePair<TKey, RedisKey>> GetKeys<TKey>(Type type, IEnumerable<TKey> ids)
+        private RedisKey GetKey<TKey>(string prefix, TKey id)
         {
-            return GetKeys(type.FullName, ids);
+            return $"{prefix}:{id}";
         }
-
-        private RedisKey GetKey<TKey>(Type type, TKey id)
-        {
-            return GetKey(type.FullName, id);
-        }
-        private RedisKey GetKey<TKey>(string typeName, TKey id)
-        {
-            return $"{typeName}:{id}";
-        }
-        private IEnumerable<KeyValuePair<TKey, RedisKey>> GetKeys<TKey>(string typeName, IEnumerable<TKey> ids)
+        private IEnumerable<KeyValuePair<TKey, RedisKey>> GetKeys<TKey>(string prefix, IEnumerable<TKey> ids)
         {
             foreach (var id in ids)
             {
-                yield return new KeyValuePair<TKey, RedisKey>(id, $"{typeName}:{id}");
+                yield return new KeyValuePair<TKey, RedisKey>(id, $"{prefix}:{id}");
             }
         }
 
-        private bool Set<TKey, T>(TKey id, T item)
+        private bool Set<TKey, T>(string prefix, TKey id, T item)
         {
-            var key = GetKey(typeof(T), id);
+            var key = GetKey(prefix, id);
             return Set(key, item);
         }
 
@@ -133,19 +124,18 @@ namespace Toolroom.ApiHelper
             return Db.StringSet(key, serializedItem);
         }
 
-        private bool SetMany<TKey, T>(IEnumerable<T> items, Func<T, TKey> idSelector)
+        private bool SetMany<TKey, T>(string prefix, IEnumerable<T> items, Func<T, TKey> idSelector)
         {
             if (!IsConnected) return false;
             var list = new List<KeyValuePair<RedisKey, RedisValue>>();
-            var typeName = typeof(T).FullName;
             foreach (var item in items)
             {
-                list.Add(new KeyValuePair<RedisKey, RedisValue>(GetKey(typeName, idSelector(item)), SerializeObject(item)));
+                list.Add(new KeyValuePair<RedisKey, RedisValue>(GetKey(prefix, idSelector(item)), SerializeObject(item)));
             }
             return Db.StringSet(list.ToArray());
         }
 
-        public void AddOrUpdate<TKey, T>(TKey id, T item)
+        public void AddOrUpdate<TKey, T>(string prefix, TKey id, T item)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -154,12 +144,12 @@ namespace Toolroom.ApiHelper
 
             if (!IsConnected) return;
 
-            var key = GetKey(typeof(T).FullName, id);
+            var key = GetKey(prefix, id);
             var storedVal = SerializeObject(item);
             Db.StringSet(key, storedVal);
         }
 
-        public async Task AddOrUpdate<TKey, T>(TKey id, Func<TKey, Task<T>> valueFactory)
+        public async Task AddOrUpdate<TKey, T>(string prefix, TKey id, Func<TKey, Task<T>> valueFactory)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -168,12 +158,12 @@ namespace Toolroom.ApiHelper
 
             if (!IsConnected) return;
 
-            var key = GetKey(typeof(T).FullName, id);
+            var key = GetKey(prefix, id);
             var storedVal = SerializeObject(await valueFactory(id));
             Db.StringSet(key, storedVal);
         }
 
-        public T GetOrAdd<TKey, T>(TKey id, Func<TKey, T> valueFactory)
+        public T GetOrAdd<TKey, T>(string prefix, TKey id, Func<TKey, T> valueFactory)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -182,7 +172,7 @@ namespace Toolroom.ApiHelper
 
             if (!IsConnected) return valueFactory(id);
 
-            var key = GetKey(typeof(T), id);
+            var key = GetKey(prefix, id);
 
             var storedVal = Db.StringGet(key);
             if (storedVal.HasValue)
@@ -199,11 +189,11 @@ namespace Toolroom.ApiHelper
             }
 
             var newVal = valueFactory(id);
-            Set(id, newVal);
+            Set(prefix, id, newVal);
             return newVal;
         }
 
-        public async Task<T> GetOrAdd<TKey, T>(TKey id, Func<TKey, Task<T>> valueFactory)
+        public async Task<T> GetOrAdd<TKey, T>(string prefix, TKey id, Func<TKey, Task<T>> valueFactory)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -212,7 +202,7 @@ namespace Toolroom.ApiHelper
 
             if (!IsConnected) return await valueFactory(id);
 
-            var key = GetKey(typeof(T), id);
+            var key = GetKey(prefix, id);
 
             var storedVal = Db.StringGet(key);
             if (storedVal.HasValue)
@@ -229,11 +219,11 @@ namespace Toolroom.ApiHelper
             }
 
             var newVal = await valueFactory(id);
-            Set(id, newVal);
+            Set(prefix, id, newVal);
             return newVal;
         }
 
-        public async Task<ICollection<T>> GetOrAdd<TKey, T>(IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<ICollection<T>>> valueFactory, Func<T, TKey> idSelector)
+        public async Task<ICollection<T>> GetOrAddMany<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<ICollection<T>>> valueFactory, Func<T, TKey> idSelector)
         {
             var ret = new List<T>();
             if (ids == null)
@@ -254,7 +244,7 @@ namespace Toolroom.ApiHelper
                 return ret;
             }
 
-            var keys = GetKeys(typeof(T), ids).ToDictionary(_ => _.Key, _ => _.Value);
+            var keys = GetKeys(prefix, ids).ToDictionary(_ => _.Key, _ => _.Value);
             var missingIds = new List<TKey>();
             var storedVals = Db.StringGet(keys.Values.ToArray());
             for (int i = 0; i < storedVals.Length; i++)
@@ -289,7 +279,7 @@ namespace Toolroom.ApiHelper
                     list.Add(missingElement);
                     ret.Add(missingElement);
                 }
-                SetMany(list, idSelector);
+                SetMany(prefix, list, idSelector);
             }
             return ret;
         }
