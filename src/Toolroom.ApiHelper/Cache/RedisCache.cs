@@ -124,13 +124,13 @@ namespace Toolroom.ApiHelper
             return Db.StringSet(key, serializedItem);
         }
 
-        private bool SetMany<TKey, T>(string prefix, IEnumerable<T> items, Func<T, TKey> idSelector)
+        private bool SetMany<TKey, T>(string prefix, IDictionary<TKey, T> items)
         {
             if (!IsConnected) return false;
             var list = new List<KeyValuePair<RedisKey, RedisValue>>();
             foreach (var item in items)
             {
-                list.Add(new KeyValuePair<RedisKey, RedisValue>(GetKey(prefix, idSelector(item)), SerializeObject(item)));
+                list.Add(new KeyValuePair<RedisKey, RedisValue>(GetKey(prefix, item.Key), SerializeObject(item.Value)));
             }
             return Db.StringSet(list.ToArray());
         }
@@ -223,7 +223,7 @@ namespace Toolroom.ApiHelper
             return newVal;
         }
 
-        public async Task<ICollection<T>> GetOrAddMany<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<ICollection<T>>> valueFactory, Func<T, TKey> idSelector)
+        public async Task<ICollection<T>> GetOrAddMany<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<IDictionary<TKey, T>>> valueFactory)
         {
             var ret = new List<T>();
             if (ids == null)
@@ -232,16 +232,9 @@ namespace Toolroom.ApiHelper
             if (valueFactory == null)
                 throw new ArgumentNullException(nameof(valueFactory));
 
-            if (idSelector == null)
-                throw new ArgumentNullException(nameof(idSelector));
-
             if (!IsConnected)
             {
-                foreach (var retValue in await valueFactory(ids))
-                {
-                    ret.Add(retValue);
-                }
-                return ret;
+                return (await valueFactory(ids)).Values;
             }
 
             var keys = GetKeys(prefix, ids).ToDictionary(_ => _.Key, _ => _.Value);
@@ -273,13 +266,9 @@ namespace Toolroom.ApiHelper
             }
             if (missingIds.Any())
             {
-                var list = new List<T>();
-                foreach (var missingElement in await valueFactory(missingIds))
-                {
-                    list.Add(missingElement);
-                    ret.Add(missingElement);
-                }
-                SetMany(prefix, list, idSelector);
+                var missingElements = await valueFactory(missingIds);
+                ret.AddRange(missingElements.Values);
+                SetMany(prefix, missingElements);
             }
             return ret;
         }
