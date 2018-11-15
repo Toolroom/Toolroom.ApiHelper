@@ -232,12 +232,13 @@ namespace Toolroom.ApiHelper
             if (valueFactory == null)
                 throw new ArgumentNullException(nameof(valueFactory));
 
+            var distinctIds = ids.Distinct();
             if (!IsConnected)
             {
-                return (await valueFactory(ids)).Values;
+                return (await valueFactory(distinctIds)).Values;
             }
 
-            var keys = GetKeys(prefix, ids).ToDictionary(_ => _.Key, _ => _.Value);
+            var keys = GetKeys(prefix, distinctIds).ToDictionary(_ => _.Key, _ => _.Value);
             var missingIds = new List<TKey>();
             var storedVals = Db.StringGet(keys.Values.ToArray());
             for (int i = 0; i < storedVals.Length; i++)
