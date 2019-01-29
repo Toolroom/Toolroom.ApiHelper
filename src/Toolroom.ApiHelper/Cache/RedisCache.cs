@@ -111,17 +111,17 @@ namespace Toolroom.ApiHelper
             }
         }
 
-        private bool Set<TKey, T>(string prefix, TKey id, T item)
+        private bool Set<TKey, T>(string prefix, TKey id, T item, TimeSpan? expiry = null)
         {
             var key = GetKey(prefix, id);
-            return Set(key, item);
+            return Set(key, item, expiry);
         }
 
-        private bool Set<T>(RedisKey key, T item)
+        private bool Set<T>(RedisKey key, T item, TimeSpan? expiry = null)
         {
             if (!IsConnected) return false;
             var serializedItem = SerializeObject(item);
-            return Db.StringSet(key, serializedItem);
+            return Db.StringSet(key, serializedItem, expiry);
         }
 
         private bool SetMany<TKey, T>(string prefix, IDictionary<TKey, T> items)
@@ -163,7 +163,7 @@ namespace Toolroom.ApiHelper
             Db.StringSet(key, storedVal);
         }
 
-        public T GetOrAdd<TKey, T>(string prefix, TKey id, Func<TKey, T> valueFactory)
+        public T GetOrAdd<TKey, T>(string prefix, TKey id, Func<TKey, T> valueFactory, TimeSpan? expiry = null)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -189,11 +189,11 @@ namespace Toolroom.ApiHelper
             }
 
             var newVal = valueFactory(id);
-            Set(prefix, id, newVal);
+            Set(prefix, id, newVal, expiry);
             return newVal;
         }
 
-        public async Task<T> GetOrAdd<TKey, T>(string prefix, TKey id, Func<TKey, Task<T>> valueFactory)
+        public async Task<T> GetOrAdd<TKey, T>(string prefix, TKey id, Func<TKey, Task<T>> valueFactory, TimeSpan? expiry = null)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -219,7 +219,7 @@ namespace Toolroom.ApiHelper
             }
 
             var newVal = await valueFactory(id);
-            Set(prefix, id, newVal);
+            Set(prefix, id, newVal, expiry);
             return newVal;
         }
 
