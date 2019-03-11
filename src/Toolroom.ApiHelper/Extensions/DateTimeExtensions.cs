@@ -52,6 +52,14 @@ namespace Toolroom.ApiHelper
         {
             return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, DateTimeKind.Unspecified);
         }
+        public static DateTime? ConvertToUnspecifiedDateTime(this DateTime? dt)
+        {
+            if (!dt.HasValue)
+            {
+                return null;
+            }
+            return ConvertToUnspecifiedDateTime(dt.Value);
+        }
 
 
         public static DateTime Floor(this DateTime dt, TimeSpan ts)
