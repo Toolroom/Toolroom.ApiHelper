@@ -255,7 +255,7 @@ namespace Toolroom.ApiHelper
                     {
                         // ignored - cannot deserialize - must be refreshed
                         missingIds.Add(keys.ElementAt(i).Key);
-                        break;
+                        continue;
                     }
                     if (element != null && !element.Equals(default(T)))
                         ret.Add(element);
