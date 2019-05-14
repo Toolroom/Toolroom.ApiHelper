@@ -274,6 +274,61 @@ namespace Toolroom.ApiHelper
             return ret;
         }
 
+        public async Task<IDictionary<TKey, T>> GetOrAddManyWithKeys<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<IDictionary<TKey, T>>> valueFactory)
+        {
+            var ret = new Dictionary<TKey, T>();
+            if (ids == null)
+                throw new ArgumentNullException(nameof(ids));
+
+            if (valueFactory == null)
+                throw new ArgumentNullException(nameof(valueFactory));
+
+            var distinctIds = ids.Distinct();
+            if (!IsConnected)
+            {
+                return await valueFactory(distinctIds);
+            }
+
+            var keys = GetKeys(prefix, distinctIds).ToDictionary(_ => _.Key, _ => _.Value);
+            var missingIds = new List<TKey>();
+            var storedVals = Db.StringGet(keys.Values.ToArray());
+            for (int i = 0; i < storedVals.Length; i++)
+            {
+                var storedVal = storedVals[i];
+                var key = keys.ElementAt(i).Key;
+                if (storedVal.HasValue)
+                {
+                    T element;
+                    try
+                    {
+                        element = DeserializeObject<T>(storedVal);
+                    }
+                    catch
+                    {
+                        // ignored - cannot deserialize - must be refreshed
+                        missingIds.Add(key);
+                        continue;
+                    }
+                    if (element != null && !element.Equals(default(T)))
+                        ret.Add(key, element);
+                    else
+                        missingIds.Add(key);
+                }
+                else
+                    missingIds.Add(keys.ElementAt(i).Key);
+            }
+            if (missingIds.Any())
+            {
+                var missingElements = await valueFactory(missingIds);
+                foreach (var missingElement in missingElements)
+                {
+                    ret.Add(missingElement.Key, missingElement.Value);
+                }
+                SetMany(prefix, missingElements);
+            }
+            return ret;
+        }
+
         private JsonSerializerSettings _serializerSettings;
 
         private JsonSerializerSettings SerializerSettings =>
