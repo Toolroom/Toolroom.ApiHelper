@@ -7,6 +7,9 @@ namespace Toolroom.ApiHelper
         [HttpStatusCode(StatusCode = (int)HttpStatusCode.Forbidden, DefaultMessage = "Insufficient rights")]
         Forbidden,
 
+        [HttpStatusCode(StatusCode = (int)HttpStatusCode.Forbidden, DefaultMessage = "License required")]
+        NoLicense,
+
         [HttpStatusCode(StatusCode = (int)HttpStatusCode.NotFound, DefaultMessage = "Element not found")]
         NotFound,
 
