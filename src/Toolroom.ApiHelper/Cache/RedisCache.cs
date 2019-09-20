@@ -223,7 +223,7 @@ namespace Toolroom.ApiHelper
             return newVal;
         }
 
-        public async Task<ICollection<T>> GetOrAddMany<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<IDictionary<TKey, T>>> valueFactory)
+        public async Task<ICollection<T>> GetOrAddMany<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<IDictionary<TKey, T>>> valueFactory, int valueFactoryBatchSize = 500)
         {
             var ret = new List<T>();
             if (ids == null)
@@ -265,16 +265,17 @@ namespace Toolroom.ApiHelper
                 else
                     missingIds.Add(keys.ElementAt(i).Key);
             }
-            if (missingIds.Any())
+            while (missingIds.Any())
             {
-                var missingElements = await valueFactory(missingIds);
+                var missingElements = await valueFactory(missingIds.Take(valueFactoryBatchSize));
                 ret.AddRange(missingElements.Values);
                 SetMany(prefix, missingElements);
+                missingIds.RemoveRange(0, Math.Min(valueFactoryBatchSize, missingIds.Count));
             }
             return ret;
         }
 
-        public async Task<IDictionary<TKey, T>> GetOrAddManyWithKeys<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<IDictionary<TKey, T>>> valueFactory)
+        public async Task<IDictionary<TKey, T>> GetOrAddManyWithKeys<TKey, T>(string prefix, IEnumerable<TKey> ids, Func<IEnumerable<TKey>, Task<IDictionary<TKey, T>>> valueFactory, int valueFactoryBatchSize = 500)
         {
             var ret = new Dictionary<TKey, T>();
             if (ids == null)
@@ -319,13 +320,15 @@ namespace Toolroom.ApiHelper
             }
             if (missingIds.Any())
             {
-                var missingElements = await valueFactory(missingIds);
+                var missingElements = await valueFactory(missingIds.Take(valueFactoryBatchSize));
                 foreach (var missingElement in missingElements)
                 {
                     ret.Add(missingElement.Key, missingElement.Value);
                 }
                 SetMany(prefix, missingElements);
+                missingIds.RemoveRange(0, Math.Min(valueFactoryBatchSize, missingIds.Count));
             }
+
             return ret;
         }
 
