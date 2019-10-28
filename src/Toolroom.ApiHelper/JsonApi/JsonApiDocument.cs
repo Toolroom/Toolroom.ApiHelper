@@ -55,7 +55,7 @@ namespace Toolroom.ApiHelper
                 {
                     model = Newtonsoft.Json.Linq.JObject.Parse(jsonString)?.ToObject<JsonApiResourceObject<T>>();
                 }
-                catch (Exception e)
+                catch
                 {
                 }
                 if (model == null) continue;

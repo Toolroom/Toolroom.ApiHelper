@@ -6,51 +6,50 @@ namespace Toolroom.ApiHelper
     {
         private const string DefaultTimeZoneId = "W. Europe Standard Time";
 
-        public static DateTime FromUtcToLocalDateTime(this DateTime utcDateTime, string timeZoneId = DefaultTimeZoneId)
+        public static DateTime FromUtcToLocalDateTime(
+            this DateTime utcDateTime, 
+            string timeZoneId = DefaultTimeZoneId)
         {
-            TimeZoneInfo tz;
-            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
             return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, tz);
         }
 
-        public static DateTime? FromUtcToLocalDateTime(this DateTime? utcDateTime,
+        public static DateTime? FromUtcToLocalDateTime(
+            this DateTime? utcDateTime,
             string timeZoneId = DefaultTimeZoneId)
         {
             if (!utcDateTime.HasValue)
                 return null;
-            TimeZoneInfo tz;
-            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime.Value, tz);
+
+            return FromUtcToLocalDateTime(utcDateTime.Value, timeZoneId);
         }
 
-        public static DateTime FromLocalToUtcDateTime(this DateTime localDateTime,
+        public static DateTime FromLocalToUtcDateTime(
+            this DateTime localDateTime,
             string timeZoneId = DefaultTimeZoneId)
         {
             if (localDateTime.Kind == DateTimeKind.Utc)
-            {
                 return localDateTime;
-            }
 
-            TimeZoneInfo tz;
-            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);          
+            localDateTime = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);          
             return TimeZoneInfo.ConvertTime(localDateTime, tz, TimeZoneInfo.Utc);
         }
 
-        public static DateTime? FromLocalToUtcDateTime(this DateTime? localDateTime,
+        public static DateTime? FromLocalToUtcDateTime(
+            this DateTime? localDateTime,
             string timeZoneId = DefaultTimeZoneId)
         {
             if (!localDateTime.HasValue)
-            {
                 return null;
-            }
-            TimeZoneInfo tz;
-            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            return TimeZoneInfo.ConvertTime(localDateTime.Value, tz, TimeZoneInfo.Utc);
+
+            return FromLocalToUtcDateTime(localDateTime.Value, timeZoneId);
         }
 
         public static DateTime ConvertToUnspecifiedDateTime(this DateTime dt)
         {
-            return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, DateTimeKind.Unspecified);
+            return DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
         }
         public static DateTime? ConvertToUnspecifiedDateTime(this DateTime? dt)
         {
