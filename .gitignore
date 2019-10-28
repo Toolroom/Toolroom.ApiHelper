@@ -9,3 +9,5 @@
 /src/Toolroom.ApiHelper/Toolroom.ApiHelper.csproj.DotSettings
 *.suo
 *.user
+/.vs/slnx.sqlite
+/.vs/ProjectSettings.json
