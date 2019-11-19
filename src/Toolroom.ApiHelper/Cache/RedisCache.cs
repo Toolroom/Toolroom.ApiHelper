@@ -74,7 +74,7 @@ namespace Toolroom.ApiHelper
             var server = Connection.GetServer(_connectionString.Split(',')[0]);
             if (!server.IsConnected) return -1;
 
-            var keys = server.Keys(Db.Database, pattern: GetKey(prefix, "*").ToString()).ToArray();
+            var keys = server.Keys(Db.Database, pattern: GetKey(prefix, "*").ToString(), pageSize: 10000).ToArray();
             if (!IsConnected) return -1;
             var deletedItems = Db.KeyDelete(keys);
             return deletedItems;
